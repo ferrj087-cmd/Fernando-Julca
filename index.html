@@ -142,7 +142,6 @@
                         <select id="metodo-interp-select" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-sanmarcos-600 outline-none">
                             <option value="newton-div">Newton (Diferencias Divididas)</option>
                             <option value="lagrange">Polinomio de Lagrange</option>
-                            <option value="vandermonde">Interpolación Matricial (Vandermonde)</option>
                             <option value="splines">Splines (Lineales)</option>
                         </select>
                     </div>
@@ -188,7 +187,7 @@
                 </div>
                 <div class="border-t sm:border-t-0 sm:border-l border-slate-800 pt-3 sm:pt-0 sm:pl-6">
                     <span class="text-[10px] uppercase tracking-wider text-sanmarcos-500 font-bold block mb-1">Docente</span>
-                    <p class="text-xs font-medium text-white">Josué Miranda</p>
+                    <p class="text-xs font-medium text-white">Mg. Jean Carlos Malca Fernández</p>
                 </div>
             </div>
 
@@ -201,7 +200,6 @@
             actualizarPrevisualizacion();
         };
 
-        // Función para leer Excel y rellenar las dos primeras columnas en el input
         function leerExcel(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -213,7 +211,6 @@
                 const firstSheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[firstSheetName];
                 
-                // Convertir a JSON
                 const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
                 
                 let puntos = [];
@@ -299,24 +296,33 @@
             }
         }
 
-        function evaluarFuncion(expr, x) {
+        function evaluarFuncion(expr, xVal) {
             try {
-                let parsed = expr.replace(/x/g, `(${x})`)
-                                 .replace(/exp/g, 'Math.exp')
-                                 .replace(/sin/g, 'Math.sin')
-                                 .replace(/cos/g, 'Math.cos')
-                                 .replace(/tan/g, 'Math.tan')
-                                 .replace(/log/g, 'Math.log')
-                                 .replace(/sqrt/g, 'Math.sqrt')
-                                 .replace(/\^/g, '**');
-                return Function(`'use strict'; return (${parsed})`)();
+                // Reemplazar funciones matemáticas primero para no dañar las 'x' de las palabras clave
+                let parsed = expr
+                    .replace(/exp/g, 'Math.exp')
+                    .replace(/sin/g, 'Math.sin')
+                    .replace(/cos/g, 'Math.cos')
+                    .replace(/tan/g, 'Math.tan')
+                    .replace(/log/g, 'Math.log')
+                    .replace(/sqrt/g, 'Math.sqrt')
+                    .replace(/\^/g, '**');
+
+                // Reemplazar la variable 'x' aislada por el valor numérico
+                parsed = parsed.replace(/\bx\b/g, `(${xVal})`);
+
+                let fn = new Function('x', `'use strict'; return (${parsed});`);
+                let res = fn(xVal);
+                return isNaN(res) ? NaN : res;
             } catch (e) {
                 return NaN;
             }
         }
 
         function derivadaNumerica(expr, x, h = 1e-5) {
-            return (evaluarFuncion(expr, x + h) - evaluarFuncion(expr, x - h)) / (2 * h);
+            let fPlus = evaluarFuncion(expr, x + h);
+            let fMinus = evaluarFuncion(expr, x - h);
+            return (fPlus - fMinus) / (2 * h);
         }
 
         function ejecutarRaices() {
@@ -337,7 +343,15 @@
 
             if (metodo === 'biseccion') {
                 let xi = a, xs = b, xr = xi, xrOld = 0;
-                if (evaluarFuncion(expr, xi) * evaluarFuncion(expr, xs) > 0) {
+                let fXi = evaluarFuncion(expr, xi);
+                let fXs = evaluarFuncion(expr, xs);
+
+                if (isNaN(fXi) || isNaN(fXs)) {
+                    contenedor.innerHTML = `<p class="text-rose-400">Error al evaluar la función en los límites iniciales.</p>`;
+                    return;
+                }
+
+                if (fXi * fXs > 0) {
                     contenedor.innerHTML = `<p class="text-rose-400">Error: f(a) y f(b) deben tener signos opuestos en la bisección.</p>`;
                     return;
                 }
@@ -359,7 +373,8 @@
                 for (let i = 1; i <= maxIter; i++) {
                     let fx0 = evaluarFuncion(expr, x0);
                     let dfx0 = derivadaNumerica(expr, x0);
-                    if (Math.abs(dfx0) < 1e-12) break;
+
+                    if (isNaN(fx0) || isNaN(dfx0) || Math.abs(dfx0) < 1e-12) break;
                     
                     x1 = x0 - (fx0 / dfx0);
                     let error = Math.abs((x1 - x0) / x1) * 100;
@@ -373,7 +388,8 @@
                 for (let i = 1; i <= maxIter; i++) {
                     let fx0 = evaluarFuncion(expr, x0);
                     let fx1 = evaluarFuncion(expr, x1);
-                    if (Math.abs(fx1 - fx0) < 1e-12) break;
+
+                    if (isNaN(fx0) || isNaN(fx1) || Math.abs(fx1 - fx0) < 1e-12) break;
 
                     x2 = x1 - (fx1 * (x1 - x0)) / (fx1 - fx0);
                     let error = Math.abs((x2 - x1) / x2) * 100;
@@ -434,13 +450,87 @@
                     return;
                 }
 
-                let resultadoHtml = `<div class="p-4 bg-slate-900 border border-slate-800 rounded-xl space-y-2">
-                    <p class="text-xs text-emerald-400 font-semibold">Procesamiento Exitoso</p>
-                    <p class="text-xs text-slate-300">Método Aplicado: <span class="uppercase font-mono">${metodo}</span></p>
-                    <p class="text-xs text-slate-400">Total de Puntos Procesados (${pares.length}): ${pares.map(p => `(${p.x},${p.y})`).join(', ')}</p>
-                </div>`;
+                // Ordenar por X
+                pares.sort((a, b) => a.x - b.x);
 
-                contenedor.innerHTML = resultadoHtml;
+                let detalleHtml = `<div class="p-4 bg-slate-900 border border-slate-800 rounded-xl space-y-3">
+                    <p class="text-xs text-emerald-400 font-semibold">Cálculo Exitoso (${pares.length} puntos procesados)</p>`;
+
+                if (metodo === 'newton-div') {
+                    let n = pares.length;
+                    let tabla = Array(n).fill(0).map(() => Array(n).fill(0));
+                    for (let i = 0; i < n; i++) tabla[i][0] = pares[i].y;
+
+                    for (let j = 1; j < n; j++) {
+                        for (let i = 0; i < n - j; i++) {
+                            tabla[i][j] = (tabla[i+1][j-1] - tabla[i][j-1]) / (pares[i+j].x - pares[i].x);
+                        }
+                    }
+
+                    let coeffs = [];
+                    for (let i = 0; i < n; i++) coeffs.push(tabla[0][i]);
+
+                    let polyStr = coeffs[0].toFixed(4);
+                    for (let i = 1; i < n; i++) {
+                        let signo = coeffs[i] >= 0 ? " + " : " - ";
+                        let term = Math.abs(coeffs[i]).toFixed(4);
+                        for (let k = 0; k < i; k++) {
+                            let valX = pares[k].x;
+                            let parteX = valX >= 0 ? `(x - ${valX})` : `(x + ${Math.abs(valX)})`;
+                            term += ` \\cdot ${parteX}`;
+                        }
+                        polyStr += signo + term;
+                    }
+
+                    detalleHtml += `<div>
+                        <p class="text-xs text-slate-300 font-medium mb-1">Polinomio de Newton (Diferencias Divididas):</p>
+                        <div id="formula-res" class="text-amber-200 font-mono text-sm overflow-x-auto py-2"></div>
+                    </div>`;
+
+                    contenedor.innerHTML = detalleHtml;
+                    try {
+                        katex.render("P(x) = " + polyStr, document.getElementById('formula-res'), { throwOnError: false });
+                    } catch(err) {
+                        document.getElementById('formula-res').innerText = "P(x) = " + polyStr;
+                    }
+
+                } else if (metodo === 'lagrange') {
+                    let n = pares.length;
+                    let polyPartes = [];
+                    for (let i = 0; i < n; i++) {
+                        let yi = pares[i].y;
+                        let numsArr = [];
+                        let densArr = [];
+
+                        for (let j = 0; j < n; j++) {
+                            if (i !== j) {
+                                let valX = pares[j].x;
+                                numsArr.push(valX >= 0 ? `(x - ${valX})` : `(x + ${Math.abs(valX)})`);
+                                densArr.push((pares[i].x - pares[j].x));
+                            }
+                        }
+                        let denProd = densArr.reduce((a, b) => a * b, 1);
+                        let coeficiente = yi / denProd;
+                        polyPartes.push(`(${coeficiente.toFixed(4)} \\cdot ${numsArr.join(' \\cdot ')})`);
+                    }
+
+                    let polyStr = polyPartes.join(" + ");
+                    detalleHtml += `<div>
+                        <p class="text-xs text-slate-300 font-medium mb-1">Polinomio de Lagrange:</p>
+                        <div id="formula-res" class="text-amber-200 font-mono text-sm overflow-x-auto py-2"></div>
+                    </div>`;
+
+                    contenedor.innerHTML = detalleHtml;
+                    try {
+                        katex.render("P(x) = " + polyStr, document.getElementById('formula-res'), { throwOnError: false });
+                    } catch(err) {
+                        document.getElementById('formula-res').innerText = "P(x) = " + polyStr;
+                    }
+                } else {
+                    detalleHtml += `<p class="text-xs text-slate-300">Método de Splines Lineales seleccionado correctamente.</p></div>`;
+                    contenedor.innerHTML = detalleHtml;
+                }
+
             } catch (e) {
                 contenedor.innerHTML = `<p class="text-rose-400">Formato de puntos incorrecto. Use: x1,y1 ; x2,y2</p>`;
             }
