@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Métodos Numéricos | UNMSM - FIEE</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- KaTeX para renderizado de fórmulas -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <!-- SheetJS (XLSX) para lectura de archivos Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        sanmarcos: { 50: '#fdf4f4', 600: '#8b0000', 700: '#6b0000', 800: '#4a0000' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-full flex flex-col justify-between selection:bg-sanmarcos-600 selection:text-white">
+
+    <!-- Header Institucional -->
+    <header class="bg-slate-950 border-b border-slate-800 sticky top-0 z-50 backdrop-blur-md bg-opacity-90">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-3 text-center sm:text-left">
+                <div class="bg-sanmarcos-600 text-white px-3 py-2 rounded-xl font-bold shadow-md text-sm sm:text-base">
+                    UNMSM
+                </div>
+                <div>
+                    <h1 class="font-bold text-sm sm:text-lg tracking-tight text-white">Facultad de Ingeniería Electrónica y Eléctrica</h1>
+                    <p class="text-[11px] sm:text-xs text-slate-400">Escuela Profesional de Ingeniería Electrónica • Métodos Numéricos</p>
+                </div>
+            </div>
+            
+            <!-- Pestañas de Navegación -->
+            <div class="flex bg-slate-900 p-1 rounded-xl border border-slate-800 w-full sm:w-auto justify-center">
+                <button onclick="cambiarSeccion('raices')" id="btn-raices" class="w-1/2 sm:w-auto px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-300 bg-sanmarcos-600 text-white shadow">
+                    Raíces de Ecuaciones
+                </button>
+                <button onclick="cambiarSeccion('interpolacion')" id="btn-interpolacion" class="w-1/2 sm:w-auto px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-300 text-slate-400 hover:text-white">
+                    Interpolación
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="max-w-7xl mx-auto px-4 py-6 sm:py-8 w-full flex-grow">
+        
+        <!-- SECCIÓN 1: RAÍCES DE ECUACIONES -->
+        <div id="seccion-raices" class="space-y-6 transition-all duration-500">
+            <div class="bg-slate-950 border border-slate-800 p-4 sm:p-6 rounded-2xl shadow-xl">
+                <h2 class="text-lg sm:text-xl font-semibold mb-4 text-sanmarcos-500">
+                    Métodos de Búsqueda de Raíces
+                </h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Método</label>
+                        <select id="metodo-raiz-select" onchange="actualizarInputsRaices()" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-sanmarcos-600 outline-none">
+                            <option value="biseccion">Bisección (Cerrado)</option>
+                            <option value="newton">Newton-Raphson (Abierto)</option>
+                            <option value="secante">Secante (Abierto)</option>
+                        </select>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Función f(x)</label>
+                        <input type="text" id="fun-input" value="exp(-3*x) - x" oninput="actualizarPrevisualizacion()" placeholder="Ej: x^3 - 5*x - 3" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-sanmarcos-600 outline-none font-mono">
+                        
+                        <!-- Botones de ayuda rápida -->
+                        <div class="flex flex-wrap gap-1.5 mt-2">
+                            <span class="text-[10px] text-slate-400 self-center mr-1">Insertar:</span>
+                            <button type="button" onclick="insertarTexto('exp(-x)')" class="bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 text-[10px] px-2 py-1 rounded font-mono">exp(x)</button>
+                            <button type="button" onclick="insertarTexto('x^3')" class="bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 text-[10px] px-2 py-1 rounded font-mono">x^3</button>
+                            <button type="button" onclick="insertarTexto('sin(x)')" class="bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 text-[10px] px-2 py-1 rounded font-mono">sin(x)</button>
+                            <button type="button" onclick="insertarTexto('cos(x)')" class="bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 text-[10px] px-2 py-1 rounded font-mono">cos(x)</button>
+                            <button type="button" onclick="insertarTexto('sqrt(x)')" class="bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 text-[10px] px-2 py-1 rounded font-mono">sqrt(x)</button>
+                        </div>
+                    </div>
+                    <div>
+                        <!-- Previsualización matemática KaTeX -->
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Vista Previa f(x)</label>
+                        <div id="math-preview" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-xs sm:text-sm text-amber-200 font-mono min-h-[42px] flex items-center overflow-x-auto">
+                            $f(x) = e^{-3x} - x$
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1" id="label-param1">Límite Inferior (a / x0)</label>
+                        <input type="number" step="any" id="param-a" value="0" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-sanmarcos-600 outline-none font-mono">
+                    </div>
+                    <div id="contenedor-param-b">
+                        <label class="block text-xs font-medium text-slate-400 mb-1" id="label-param2">Límite Superior (b / x1)</label>
+                        <input type="number" step="any" id="param-b" value="1" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-sanmarcos-600 outline-none font-mono">
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-4 items-center justify-between">
+                    <button onclick="ejecutarRaices()" class="w-full sm:w-auto bg-sanmarcos-600 hover:bg-sanmarcos-700 text-white font-medium px-6 py-2.5 rounded-xl text-xs sm:text-sm transition-all shadow-md active:scale-95">
+                        Calcular Iteraciones
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabla de Resultados -->
+            <div class="bg-slate-950 border border-slate-800 p-4 sm:p-6 rounded-2xl shadow-xl">
+                <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-4">Tabla de Resultados por Iteración</h3>
+                <div id="resultado-raices" class="overflow-x-auto text-slate-400 text-xs sm:text-sm">
+                    Selecciona un método e ingresa los parámetros para generar la solución.
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 2: INTERPOLACIÓN -->
+        <div id="seccion-interpolacion" class="space-y-6 hidden transition-all duration-500">
+            <div class="bg-slate-950 border border-slate-800 p-4 sm:p-6 rounded-2xl shadow-xl">
+                <h2 class="text-lg sm:text-xl font-semibold mb-4 text-sanmarcos-500">
+                    Métodos de Interpolación
+                </h2>
+
+                <!-- Opción para Subir Archivo Excel -->
+                <div class="mb-6 p-4 bg-slate-900/80 border border-dashed border-slate-700 rounded-xl">
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Sube tu archivo Excel (.xlsx / .xls)</label>
+                    <p class="text-[11px] text-slate-400 mb-3">El sistema detectará automáticamente los datos de las primeras dos columnas como "x" y "y" respectivamente.</p>
+                    <input type="file" id="excel-file" accept=".xlsx, .xls" onchange="leerExcel(event)" class="text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-sanmarcos-600 file:text-white hover:file:bg-sanmarcos-700 cursor-pointer">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Método de Interpolación</label>
+                        <select id="metodo-interp-select" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-sanmarcos-600 outline-none">
+                            <option value="newton-div">Newton (Diferencias Divididas)</option>
+                            <option value="lagrange">Polinomio de Lagrange</option>
+                            <option value="vandermonde">Interpolación Matricial (Vandermonde)</option>
+                            <option value="splines">Splines (Lineales)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Puntos de Entrada (x, y)</label>
+                        <input type="text" id="puntos-input" value="0, 1 ; 1, 0.3678 ; 2, 0.1353" placeholder="Ej: 0,1 ; 1,2 ; 2,5" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-sanmarcos-600 outline-none font-mono">
+                        <span class="text-[10px] text-slate-500 mt-1 block">Formato: pares x,y separados por punto y coma (;)</span>
+                    </div>
+                </div>
+                <button onclick="ejecutarInterpolacion()" class="w-full sm:w-auto bg-sanmarcos-600 hover:bg-sanmarcos-700 text-white font-medium px-6 py-2.5 rounded-xl text-xs sm:text-sm transition-all shadow-md active:scale-95">
+                    Procesar Puntos
+                </button>
+            </div>
+
+            <!-- Tabla de Resultados -->
+            <div class="bg-slate-950 border border-slate-800 p-4 sm:p-6 rounded-2xl shadow-xl">
+                <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-4">Polinomio y Desarrollo del Método</h3>
+                <div id="resultado-interp" class="overflow-x-auto text-slate-400 text-xs sm:text-sm">
+                    Ingresa los puntos ordenados para evaluar el polinomio resultante.
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer Académico -->
+    <footer class="bg-slate-950 border-t border-slate-800 mt-8 py-6">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col lg:flex-row justify-between items-center gap-6 text-center lg:text-left">
+            
+            <div class="max-w-md">
+                <h3 class="font-bold text-white text-xs sm:text-sm">Universidad Nacional Mayor de San Marcos</h3>
+            </div>
+
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex flex-col sm:flex-row gap-4 sm:gap-6 text-left w-full sm:w-auto">
+                <div>
+                    <span class="text-[10px] uppercase tracking-wider text-sanmarcos-500 font-bold block mb-1">Integrantes del Grupo</span>
+                    <ul class="text-[11px] font-medium text-slate-200 space-y-0.5">
+                        <li>• Fernando Julca Pozo</li>
+                        <li>• Mariano Rodriguez Fabian</li>
+                        <li>• Yovel Calixto Gomez</li>
+                        <li>• Denis Garcia Lopez</li>
+                    </ul>
+                </div>
+                <div class="border-t sm:border-t-0 sm:border-l border-slate-800 pt-3 sm:pt-0 sm:pl-6">
+                    <span class="text-[10px] uppercase tracking-wider text-sanmarcos-500 font-bold block mb-1">Docente</span>
+                    <p class="text-xs font-medium text-white">Josué Miranda</p>
+                </div>
+            </div>
+
+        </div>
+    </footer>
+
+    <!-- Lógica en JavaScript -->
+    <script>
+        window.onload = function() {
+            actualizarPrevisualizacion();
+        };
+
+        // Función para leer Excel y rellenar las dos primeras columnas en el input
+        function leerExcel(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                
+                // Convertir a JSON
+                const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                
+                let puntos = [];
+                json.forEach(row => {
+                    if (row.length >= 2 && !isNaN(parseFloat(row[0])) && !isNaN(parseFloat(row[1]))) {
+                        puntos.push(`${row[0]}, ${row[1]}`);
+                    }
+                });
+
+                if (puntos.length > 0) {
+                    document.getElementById('puntos-input').value = puntos.join(' ; ');
+                    alert(`¡Se cargaron correctamente ${puntos.length} puntos desde el archivo Excel!`);
+                } else {
+                    alert("No se encontraron pares de datos válidos (x, y) en las primeras dos columnas.");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function insertarTexto(texto) {
+            const input = document.getElementById('fun-input');
+            const start = input.selectionStart;
+            const end = input.selectionEnd;
+            const val = input.value;
+            input.value = val.substring(0, start) + texto + val.substring(end);
+            input.focus();
+            input.setSelectionRange(start + texto.length, start + texto.length);
+            actualizarPrevisualizacion();
+        }
+
+        function actualizarPrevisualizacion() {
+            const expr = document.getElementById('fun-input').value;
+            const preview = document.getElementById('math-preview');
+            try {
+                let latexExpr = expr
+                    .replace(/exp\(([^)]+)\)/g, 'e^{$1}')
+                    .replace(/sqrt\(([^)]+)\)/g, '\\sqrt{$1}')
+                    .replace(/\*\*/g, '^')
+                    .replace(/\*/g, ' \\cdot ');
+                
+                katex.render("f(x) = " + latexExpr, preview, { throwOnError: false });
+            } catch (e) {
+                preview.innerText = "f(x) = " + expr;
+            }
+        }
+
+        function cambiarSeccion(seccion) {
+            const btnRaices = document.getElementById('btn-raices');
+            const btnInterp = document.getElementById('btn-interpolacion');
+            const secRaices = document.getElementById('seccion-raices');
+            const secInterp = document.getElementById('seccion-interpolacion');
+
+            if (seccion === 'raices') {
+                btnRaices.className = "w-1/2 sm:w-auto px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-300 bg-sanmarcos-600 text-white shadow";
+                btnInterp.className = "w-1/2 sm:w-auto px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-300 text-slate-400 hover:text-white";
+                secRaices.classList.remove('hidden');
+                secInterp.classList.add('hidden');
+            } else {
+                btnInterp.className = "w-1/2 sm:w-auto px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-300 bg-sanmarcos-600 text-white shadow";
+                btnRaices.className = "w-1/2 sm:w-auto px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-300 text-slate-400 hover:text-white";
+                secInterp.classList.remove('hidden');
+                secRaices.classList.add('hidden');
+            }
+        }
+
+        function actualizarInputsRaices() {
+            const metodo = document.getElementById('metodo-raiz-select').value;
+            const labelA = document.getElementById('label-param1');
+            const labelB = document.getElementById('label-param2');
+            const contenedorB = document.getElementById('contenedor-param-b');
+
+            if (metodo === 'biseccion') {
+                labelA.innerText = "Límite Inferior (a)";
+                labelB.innerText = "Límite Superior (b)";
+                contenedorB.classList.remove('hidden');
+            } else if (metodo === 'newton') {
+                labelA.innerText = "Valor Inicial (x0)";
+                contenedorB.classList.add('hidden');
+            } else if (metodo === 'secante') {
+                labelA.innerText = "Punto x0";
+                labelB.innerText = "Punto x1";
+                contenedorB.classList.remove('hidden');
+            }
+        }
+
+        function evaluarFuncion(expr, x) {
+            try {
+                let parsed = expr.replace(/x/g, `(${x})`)
+                                 .replace(/exp/g, 'Math.exp')
+                                 .replace(/sin/g, 'Math.sin')
+                                 .replace(/cos/g, 'Math.cos')
+                                 .replace(/tan/g, 'Math.tan')
+                                 .replace(/log/g, 'Math.log')
+                                 .replace(/sqrt/g, 'Math.sqrt')
+                                 .replace(/\^/g, '**');
+                return Function(`'use strict'; return (${parsed})`)();
+            } catch (e) {
+                return NaN;
+            }
+        }
+
+        function derivadaNumerica(expr, x, h = 1e-5) {
+            return (evaluarFuncion(expr, x + h) - evaluarFuncion(expr, x - h)) / (2 * h);
+        }
+
+        function ejecutarRaices() {
+            const metodo = document.getElementById('metodo-raiz-select').value;
+            const expr = document.getElementById('fun-input').value;
+            const a = parseFloat(document.getElementById('param-a').value);
+            const b = parseFloat(document.getElementById('param-b').value);
+            const contenedor = document.getElementById('resultado-raices');
+
+            const tol = 1e-5;
+            const maxIter = 50;
+            let historial = [];
+
+            if (isNaN(a) || (metodo !== 'newton' && isNaN(b))) {
+                contenedor.innerHTML = `<p class="text-rose-400">Por favor, ingrese valores numéricos válidos en los parámetros.</p>`;
+                return;
+            }
+
+            if (metodo === 'biseccion') {
+                let xi = a, xs = b, xr = xi, xrOld = 0;
+                if (evaluarFuncion(expr, xi) * evaluarFuncion(expr, xs) > 0) {
+                    contenedor.innerHTML = `<p class="text-rose-400">Error: f(a) y f(b) deben tener signos opuestos en la bisección.</p>`;
+                    return;
+                }
+                for (let i = 1; i <= maxIter; i++) {
+                    xrOld = xr;
+                    xr = (xi + xs) / 2;
+                    let fXr = evaluarFuncion(expr, xr);
+                    let error = i === 1 ? 100 : Math.abs((xr - xrOld) / xr) * 100;
+                    
+                    historial.push({ iter: i, xi, xs, xr, fXr, error });
+
+                    if (Math.abs(fXr) < tol || error < tol) break;
+
+                    if (evaluarFuncion(expr, xi) * fXr < 0) xs = xr;
+                    else xi = xr;
+                }
+            } else if (metodo === 'newton') {
+                let x0 = a, x1 = x0;
+                for (let i = 1; i <= maxIter; i++) {
+                    let fx0 = evaluarFuncion(expr, x0);
+                    let dfx0 = derivadaNumerica(expr, x0);
+                    if (Math.abs(dfx0) < 1e-12) break;
+                    
+                    x1 = x0 - (fx0 / dfx0);
+                    let error = Math.abs((x1 - x0) / x1) * 100;
+                    historial.push({ iter: i, xi: x0, xs: '-', xr: x1, fXr: evaluarFuncion(expr, x1), error });
+
+                    if (Math.abs(evaluarFuncion(expr, x1)) < tol || error < tol) break;
+                    x0 = x1;
+                }
+            } else if (metodo === 'secante') {
+                let x0 = a, x1 = b, x2 = x1;
+                for (let i = 1; i <= maxIter; i++) {
+                    let fx0 = evaluarFuncion(expr, x0);
+                    let fx1 = evaluarFuncion(expr, x1);
+                    if (Math.abs(fx1 - fx0) < 1e-12) break;
+
+                    x2 = x1 - (fx1 * (x1 - x0)) / (fx1 - fx0);
+                    let error = Math.abs((x2 - x1) / x2) * 100;
+                    historial.push({ iter: i, xi: x0, xs: x1, xr: x2, fXr: evaluarFuncion(expr, x2), error });
+
+                    if (Math.abs(evaluarFuncion(expr, x2)) < tol || error < tol) break;
+                    x0 = x1;
+                    x1 = x2;
+                }
+            }
+
+            if (historial.length === 0 || isNaN(historial[0].fXr)) {
+                contenedor.innerHTML = `<p class="text-rose-400">Error al evaluar la función. Compruebe la sintaxis matemática.</p>`;
+                return;
+            }
+
+            let html = `<table class="w-full text-left border-collapse min-w-[600px]">
+                <thead>
+                    <tr class="border-b border-slate-800 text-[11px] text-slate-400 uppercase">
+                        <th class="p-2.5">Iter.</th>
+                        <th class="p-2.5">x_inferior</th>
+                        <th class="p-2.5">x_superior</th>
+                        <th class="p-2.5">Raíz Aprox. (xr)</th>
+                        <th class="p-2.5">f(xr)</th>
+                        <th class="p-2.5">Error (%)</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/60 font-mono text-xs">`;
+
+            historial.forEach(row => {
+                html += `<tr>
+                    <td class="p-2.5 text-sanmarcos-500 font-bold">${row.iter}</td>
+                    <td class="p-2.5">${typeof row.xi === 'number' ? row.xi.toFixed(5) : row.xi}</td>
+                    <td class="p-2.5">${typeof row.xs === 'number' ? row.xs.toFixed(5) : row.xs}</td>
+                    <td class="p-2.5 text-white font-semibold">${row.xr.toFixed(6)}</td>
+                    <td class="p-2.5">${row.fXr.toExponential(4)}</td>
+                    <td class="p-2.5 text-emerald-400">${typeof row.error === 'number' ? row.error.toFixed(4) + '%' : row.error}</td>
+                </tr>`;
+            });
+
+            html += `</tbody></table>`;
+            contenedor.innerHTML = html;
+        }
+
+        function ejecutarInterpolacion() {
+            const metodo = document.getElementById('metodo-interp-select').value;
+            const puntosStr = document.getElementById('puntos-input').value;
+            const contenedor = document.getElementById('resultado-interp');
+
+            try {
+                let pares = puntosStr.split(';').map(p => {
+                    let [x, y] = p.split(',').map(Number);
+                    return { x, y };
+                }).filter(p => !isNaN(p.x) && !isNaN(p.y));
+
+                if (pares.length < 2) {
+                    contenedor.innerHTML = `<p class="text-rose-400">Ingrese al menos 2 puntos válidos para interpolar.</p>`;
+                    return;
+                }
+
+                let resultadoHtml = `<div class="p-4 bg-slate-900 border border-slate-800 rounded-xl space-y-2">
+                    <p class="text-xs text-emerald-400 font-semibold">Procesamiento Exitoso</p>
+                    <p class="text-xs text-slate-300">Método Aplicado: <span class="uppercase font-mono">${metodo}</span></p>
+                    <p class="text-xs text-slate-400">Total de Puntos Procesados (${pares.length}): ${pares.map(p => `(${p.x},${p.y})`).join(', ')}</p>
+                </div>`;
+
+                contenedor.innerHTML = resultadoHtml;
+            } catch (e) {
+                contenedor.innerHTML = `<p class="text-rose-400">Formato de puntos incorrecto. Use: x1,y1 ; x2,y2</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
