@@ -298,7 +298,6 @@
 
         function evaluarFuncion(expr, xVal) {
             try {
-                // Reemplazar funciones matemáticas primero para no dañar las 'x' de las palabras clave
                 let parsed = expr
                     .replace(/exp/g, 'Math.exp')
                     .replace(/sin/g, 'Math.sin')
@@ -308,7 +307,6 @@
                     .replace(/sqrt/g, 'Math.sqrt')
                     .replace(/\^/g, '**');
 
-                // Reemplazar la variable 'x' aislada por el valor numérico
                 parsed = parsed.replace(/\bx\b/g, `(${xVal})`);
 
                 let fn = new Function('x', `'use strict'; return (${parsed});`);
@@ -450,7 +448,6 @@
                     return;
                 }
 
-                // Ordenar por X
                 pares.sort((a, b) => a.x - b.x);
 
                 let detalleHtml = `<div class="p-4 bg-slate-900 border border-slate-800 rounded-xl space-y-3">
